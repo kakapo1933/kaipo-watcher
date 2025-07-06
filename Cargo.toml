@@ -1,0 +1,48 @@
+[package]
+name = "kaipo-watcher"
+version = "0.1.0"
+edition = "2024"
+authors = ["Kaipo Chen"]
+description = "A command-line tool for monitoring internet usage, bandwidth, and network packets"
+license = "MIT"
+
+[dependencies]
+# CLI framework
+clap = { version = "4.5", features = ["derive"] }
+
+# Async runtime
+tokio = { version = "1.43", features = ["full"] }
+
+# Terminal UI
+ratatui = "0.30.0-alpha.5"
+crossterm = "0.29"
+
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Time handling
+chrono = { version = "0.4", features = ["serde"] }
+
+# System information
+sysinfo = "0.33"
+
+# Network monitoring (we'll add platform-specific ones later)
+pnet = "0.35"
+
+# Error handling
+anyhow = "1.0"
+thiserror = "2.0"
+
+# Logging
+log = "0.4"
+env_logger = "0.11"
+
+# Database
+rusqlite = { version = "0.33", features = ["bundled"] }
+
+# Configuration
+config = "0.14"
+
+# For getting network statistics
+if-addrs = "0.13"

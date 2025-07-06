@@ -40,3 +40,7 @@ lcov.info
 # Temporary files
 *.tmp
 *.bak
+
+# Added by cargo
+
+/target

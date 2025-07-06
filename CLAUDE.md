@@ -35,7 +35,9 @@ src/
 ## Development Guidelines
 
 ### Language: Rust
+
 This project will be implemented in **Rust** for:
+
 - High performance and memory safety
 - Excellent cross-platform support
 - Strong ecosystem for CLI tools (clap, tokio)
@@ -81,6 +83,7 @@ The project will use **Ratatui** for the terminal UI, particularly for the `moni
 ### CLI Command Structure
 
 Primary commands as per specification:
+
 - `monitor live` - Real-time dashboard
 - `monitor status` - Quick current status
 - `monitor report` - Usage reports
@@ -91,6 +94,7 @@ Primary commands as per specification:
 ## Getting Started
 
 Since this is a new Rust project, the first steps would be:
+
 1. Initialize with `cargo new kaipo-watcher --bin`
 2. Set up the project structure following the architecture plan
 3. Add key dependencies to Cargo.toml:
@@ -130,3 +134,4 @@ cargo doc --open
 - **Memory**: < 50MB during operation
 - **Storage**: Efficient database compression
 - **Update Intervals**: Configurable (1s-60s)
+

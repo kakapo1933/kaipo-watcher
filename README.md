@@ -90,6 +90,14 @@ kaipo-watcher/
 
 ## Technical Details
 
+### Code Documentation
+
+The codebase includes comprehensive inline documentation:
+- All public structs and functions have doc comments
+- Key algorithms (like bandwidth speed calculation) are explained
+- CLI commands and arguments are documented
+- Terminal UI components have detailed comments explaining their purpose
+
 ### Dependencies
 
 - **clap** - Command-line argument parsing

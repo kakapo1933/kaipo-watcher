@@ -44,3 +44,6 @@ lcov.info
 # Added by cargo
 
 /target
+
+# Serena
+.serena/

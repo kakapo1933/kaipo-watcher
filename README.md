@@ -26,6 +26,8 @@ cargo build --release
 
 The compiled binary will be available at `target/release/kaipo-watcher`.
 
+You can also use the shorter command alias `kw` instead of `kaipo-watcher`.
+
 ## Usage
 
 ### Basic Commands
@@ -33,20 +35,22 @@ The compiled binary will be available at `target/release/kaipo-watcher`.
 ```bash
 # Show current network status
 kaipo-watcher status
+# Or use the short alias
+kw status
 
 # Show detailed network status with packet information
-kaipo-watcher status --detailed
+kw status --detailed
 
 # Launch live monitoring dashboard
-kaipo-watcher live
+kw live
 
 # Monitor specific interface  
-kaipo-watcher live --interface en0
+kw live --interface en0
 # Or use short flags
-kaipo-watcher live -I en0 -i 2
+kw live -I en0 -i 2
 
 # Set custom update interval (in seconds)
-kaipo-watcher live --interval 2
+kw live --interval 2
 ```
 
 ### Available Commands

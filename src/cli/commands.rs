@@ -87,4 +87,53 @@ pub enum Commands {
         #[arg(short, long, help = "Output file path")]
         output: Option<String>,
     },
+
+    /// Real-time packet monitoring and analysis
+    #[command(about = "Monitor network packets")]
+    Packets {
+        /// Network interface to monitor
+        #[arg(short = 'I', long, help = "Monitor specific network interface")]
+        interface: Option<String>,
+
+        /// Filter by protocol (tcp, udp, icmp, http, https)
+        #[arg(short, long, help = "Filter by protocol")]
+        protocol: Option<String>,
+
+        /// Capture duration in seconds
+        #[arg(short, long, help = "Capture duration (e.g., 60s, 5m)")]
+        capture: Option<String>,
+
+        /// Show packet details
+        #[arg(short, long, help = "Show detailed packet information")]
+        detailed: bool,
+
+        /// Maximum number of connections to display
+        #[arg(long, default_value = "10", help = "Maximum connections to show")]
+        max_connections: usize,
+    },
+
+    /// Analyze captured traffic patterns
+    #[command(about = "Analyze network traffic patterns")]
+    Analyze {
+        /// Time period to analyze
+        #[arg(
+            short,
+            long,
+            default_value = "1h",
+            help = "Analysis period (e.g., 30m, 1h, 24h)"
+        )]
+        period: String,
+
+        /// Network interface to analyze
+        #[arg(short = 'I', long, help = "Analyze specific network interface")]
+        interface: Option<String>,
+
+        /// Include security analysis
+        #[arg(short, long, help = "Include security analysis")]
+        security: bool,
+
+        /// Show protocol distribution
+        #[arg(long, help = "Show protocol distribution")]
+        protocols: bool,
+    },
 }

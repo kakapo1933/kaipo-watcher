@@ -50,3 +50,16 @@ config = "0.15"
 
 # For getting network statistics
 if-addrs = "0.13"
+
+# Async traits
+async-trait = "0.1"
+
+# Platform-specific dependencies
+[target.'cfg(target_os = "linux")'.dependencies]
+nix = { version = "0.29", features = ["user"] }
+
+[target.'cfg(any(target_os = "macos", target_os = "windows"))'.dependencies]
+libc = "0.2"
+
+[dev-dependencies]
+tempfile = "3.0"

@@ -1,10 +1,15 @@
 // Application modules
 mod cli;        // Command-line interface definitions
 mod collectors; // Network data collection modules
+mod models;     // Data models and types
+mod analyzers;  // Protocol analysis modules
+mod storage;    // Data persistence layer
 
 use anyhow::Result;
 use clap::Parser;
-use cli::{commands::Commands, Cli};
+use cli::{commands::Commands, Cli, PacketCommandHandler};
+use storage::PacketStorage;
+use std::sync::Arc;
 
 // Include dashboard module directly from cli directory
 // This pattern allows us to keep the dashboard code separate while
@@ -65,6 +70,33 @@ Interface: {}", stat.interface_name);
         // Future feature: Export data to various formats
         Commands::Export { format, output } => {
             println!("Export to format '{}' (output: {:?}) is not yet implemented.", format, output);
+        }
+        // Real-time packet monitoring
+        Commands::Packets { interface, protocol, capture, detailed, max_connections } => {
+            // Initialize packet storage
+            let storage = Arc::new(PacketStorage::new("./data/packets.db", 100)?);
+            let handler = PacketCommandHandler::new(storage);
+            
+            handler.handle_packets_command(
+                interface,
+                protocol,
+                capture,
+                detailed,
+                max_connections,
+            ).await?;
+        }
+        // Traffic pattern analysis
+        Commands::Analyze { period, interface, security, protocols } => {
+            // Initialize packet storage
+            let storage = Arc::new(PacketStorage::new("./data/packets.db", 100)?);
+            let handler = PacketCommandHandler::new(storage);
+            
+            handler.handle_analyze_command(
+                period,
+                interface,
+                security,
+                protocols,
+            ).await?;
         }
     }
 

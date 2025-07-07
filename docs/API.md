@@ -105,6 +105,19 @@ pub enum Commands {
     Status {
         detailed: bool,
     },
+    Packets {
+        interface: Option<String>,
+        protocol: Option<String>,
+        capture: Option<String>,
+        detailed: bool,
+        max_connections: usize,
+    },
+    Analyze {
+        period: String,
+        interface: Option<String>,
+        security: bool,
+        protocols: bool,
+    },
     Report {
         period: String,
         app_breakdown: bool,
@@ -202,14 +215,184 @@ Common error scenarios:
 - Insufficient permissions (future packet capture)
 - System resource limitations
 
+### `models::NetworkPacket`
+
+Represents a captured network packet with comprehensive metadata.
+
+```rust
+pub struct NetworkPacket {
+    pub timestamp: DateTime<Local>,
+    pub interface: String,
+    pub size_bytes: u64,
+    pub protocol: PacketProtocol,
+    pub transport_protocol: TransportProtocol,
+    pub source_addr: Option<IpAddr>,
+    pub dest_addr: Option<IpAddr>,
+    pub source_port: Option<u16>,
+    pub dest_port: Option<u16>,
+    pub direction: PacketDirection,
+}
+```
+
+### `collectors::PacketCollector`
+
+Handles low-level packet capture with platform-specific implementations.
+
+#### Methods
+
+##### `new(interface_name: String) -> Result<Self>`
+Creates a new packet collector for the specified interface.
+
+##### `start(&mut self) -> Result<()>`
+Starts packet capture. Requires elevated privileges.
+
+##### `receive_packet(&mut self) -> Option<NetworkPacket>`
+Receives the next captured packet from the queue.
+
+**Example**:
+```rust
+let mut collector = PacketCollector::new("eth0".to_string())?;
+collector.start().await?;
+
+while let Some(packet) = collector.receive_packet().await {
+    println!("Captured {} bytes from {}", 
+        packet.size_bytes, 
+        packet.source_addr.unwrap_or("unknown".parse().unwrap())
+    );
+}
+```
+
+### `analyzers::ProtocolAnalyzer`
+
+Analyzes packets for protocol identification and security patterns.
+
+#### Methods
+
+##### `new() -> Self`
+Creates a new protocol analyzer instance.
+
+##### `analyze_packet(&mut self, packet: &NetworkPacket) -> Result<AnalysisResult>`
+Analyzes a packet and returns detailed information.
+
+**Returns**: `AnalysisResult` containing:
+- Application protocol identification
+- Encryption detection
+- Traffic type classification
+- Security flags
+- Flow direction
+
+### `storage::PacketStorage`
+
+Manages persistent storage of packet data and analysis results.
+
+#### Methods
+
+##### `new<P: AsRef<Path>>(db_path: P, batch_size: usize) -> Result<Self>`
+Creates new storage instance with SQLite backend.
+
+##### `analyze_packet_for_storage(&self, packet: &NetworkPacket, analysis: &AnalysisResult) -> Result<()>`
+Stores packet analysis results in the database.
+
+##### `get_traffic_summary(&self, interface: &str, since: DateTime<Local>) -> Result<TrafficSummary>`
+Retrieves aggregated traffic statistics for the specified period.
+
+### `cli::PacketCommandHandler`
+
+Handles packet monitoring CLI commands.
+
+#### Methods
+
+##### `handle_packets_command(&self, interface: Option<String>, protocol_filter: Option<String>, capture_duration: Option<String>, detailed: bool, max_connections: usize) -> Result<()>`
+Executes real-time packet monitoring with optional filters.
+
+##### `handle_analyze_command(&self, period: String, interface: Option<String>, security: bool, protocols: bool) -> Result<()>`
+Analyzes historical packet data and displays results.
+
+## Packet Monitoring Examples
+
+### Basic Packet Capture
+
+```rust
+use kaipo_watcher::collectors::PacketCollector;
+use kaipo_watcher::analyzers::ProtocolAnalyzer;
+use std::time::Duration;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    // Note: Requires elevated privileges
+    let mut collector = PacketCollector::new("eth0".to_string())?;
+    let mut analyzer = ProtocolAnalyzer::new();
+    
+    collector.start().await?;
+    
+    // Capture for 60 seconds
+    let start = tokio::time::Instant::now();
+    while start.elapsed() < Duration::from_secs(60) {
+        if let Some(packet) = collector.receive_packet().await {
+            let analysis = analyzer.analyze_packet(&packet)?;
+            
+            if let Some(protocol) = analysis.application_protocol {
+                println!("Detected {} traffic: {} bytes", 
+                    protocol, packet.size_bytes);
+            }
+        }
+    }
+    
+    Ok(())
+}
+```
+
+### Traffic Analysis
+
+```rust
+use kaipo_watcher::storage::PacketStorage;
+use chrono::{Local, Duration};
+use std::sync::Arc;
+
+#[tokio::main]
+async fn main() -> Result<()> {
+    let storage = Arc::new(PacketStorage::new("./data/packets.db", 100)?);
+    
+    // Analyze last hour of traffic
+    let since = Local::now() - Duration::hours(1);
+    let summary = storage.get_traffic_summary("eth0", since)?;
+    
+    println!("Traffic Summary:");
+    println!("Total Packets: {}", summary.total_packets);
+    println!("Total Bytes: {}", summary.total_bytes);
+    
+    for (protocol, stats) in summary.protocols {
+        println!("{}: {} packets, {} bytes", 
+            protocol, stats.packets, stats.bytes);
+    }
+    
+    Ok(())
+}
+```
+
+## Security Features
+
+The packet analysis system includes security monitoring:
+
+- **Suspicious Port Detection**: Identifies traffic on uncommon ports
+- **Unencrypted Sensitive Data**: Detects potentially sensitive data without encryption
+- **High Frequency Patterns**: Identifies unusual traffic frequency
+- **Unknown Protocols**: Flags unrecognized or unusual protocols
+- **Large Payload Detection**: Identifies unusually large packet payloads
+
+## Performance Considerations
+
+- Packet capture uses efficient channel-based buffering
+- Database operations are batched for optimal performance
+- Memory usage is controlled through configurable batch sizes
+- Platform-specific optimizations for packet capture
+- Async/await design prevents blocking operations
+
 ## Future API Additions
 
-### Planned for Phase 2
+### Planned for Phase 3
 - `ApplicationMonitor` - Per-application bandwidth tracking
 - `AlertManager` - Threshold monitoring and notifications
 - `DataExporter` - JSON/CSV/HTML export functionality
-
-### Planned for Phase 3
-- `PacketCollector` - Low-level packet capture
-- `ProtocolAnalyzer` - Protocol classification
-- `SecurityMonitor` - Anomaly detection
+- `GeolocationAnalyzer` - IP geolocation services
+- `MLAnomalyDetector` - Machine learning-based anomaly detection

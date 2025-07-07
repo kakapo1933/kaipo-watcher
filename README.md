@@ -6,6 +6,9 @@ A command-line tool for monitoring internet usage, bandwidth, and network packet
 
 - **Real-time Bandwidth Monitoring**: Track upload/download speeds across all network interfaces
 - **Live Dashboard**: Interactive terminal UI with real-time updates using Ratatui
+- **Packet Monitoring**: Capture and analyze network packets with protocol detection
+- **Traffic Analysis**: Detailed protocol distribution and connection tracking
+- **Security Analysis**: Detect suspicious patterns and security events
 - **Detailed Network Statistics**: View packet counts, total data transferred, and per-interface metrics
 - **Cross-Platform Support**: Works on Linux, macOS, and Windows
 
@@ -60,6 +63,17 @@ kw live --interval 2
 - `live` - Launch real-time monitoring dashboard
   - `--interface <name>` or `-I <name>` - Monitor specific network interface
   - `--interval <seconds>` or `-i <seconds>` - Set update interval (default: 1s)
+- `packets` - Real-time packet monitoring and analysis
+  - `--interface <name>` or `-I <name>` - Monitor specific network interface
+  - `--protocol <protocol>` - Filter by protocol (tcp, udp, icmp, http, https)
+  - `--capture <duration>` - Capture duration (e.g., 60s, 5m)
+  - `--detailed` - Show detailed packet information
+  - `--max-connections <num>` - Maximum connections to display
+- `analyze` - Analyze captured traffic patterns
+  - `--period <period>` - Analysis period (e.g., 30m, 1h, 24h)
+  - `--interface <name>` or `-I <name>` - Analyze specific network interface
+  - `--security` - Include security analysis
+  - `--protocols` - Show protocol distribution
 - `report` - Generate usage reports (not yet implemented)
 - `history` - View historical data (not yet implemented)
 - `export` - Export data to various formats (not yet implemented)
@@ -75,16 +89,32 @@ kaipo-watcher/
 ├── src/
 │   ├── collectors/           # Data gathering modules
 │   │   ├── mod.rs
-│   │   └── bandwidth_collector.rs
-│   ├── cli/                  # Command-line interface
+│   │   ├── bandwidth_collector.rs
+│   │   ├── packet_collector.rs
+│   │   └── platform/         # Platform-specific packet capture
+│   ├── models/              # Data models and types
 │   │   ├── mod.rs
-│   │   ├── commands.rs       # CLI command definitions
-│   │   └── dashboard.rs      # Live dashboard implementation
-│   └── main.rs              # Application entry point
-├── docs/                    # Documentation
-│   ├── API.md              # API reference
-│   ├── DEVELOPMENT.md      # Development process
-│   └── KNOWN_ISSUES.md     # Known bugs and workarounds
+│   │   ├── packet.rs
+│   │   └── usage.rs
+│   ├── analyzers/           # Protocol analysis modules
+│   │   ├── mod.rs
+│   │   └── protocol_analyzer.rs
+│   ├── storage/             # Data persistence layer
+│   │   ├── mod.rs
+│   │   ├── packet_storage.rs
+│   │   └── schema.rs
+│   ├── cli/                 # Command-line interface
+│   │   ├── mod.rs
+│   │   ├── commands.rs      # CLI command definitions
+│   │   ├── packet_commands.rs # Packet monitoring commands
+│   │   └── dashboard.rs     # Live dashboard implementation
+│   └── main.rs             # Application entry point
+├── docs/                   # Documentation
+│   ├── ARCHITECTURE.md     # System architecture
+│   ├── DOMAIN_MODEL.md     # Domain model documentation
+│   ├── CODE_ORGANIZATION.md # Code organization guide
+│   ├── API.md             # API reference
+│   └── KNOWN_ISSUES.md    # Known bugs and workarounds
 ├── Cargo.toml               # Project dependencies
 ├── CLAUDE.md                # AI assistant instructions
 ├── BLUEPRINT.md             # Project specification
@@ -109,8 +139,13 @@ The codebase includes comprehensive inline documentation:
 - **ratatui** - Terminal UI framework
 - **crossterm** - Cross-platform terminal manipulation
 - **sysinfo** - System and network information gathering
+- **pnet** - Network packet capture and manipulation
+- **rusqlite** - SQLite database for local storage
 - **chrono** - Date and time handling
 - **serde** - Serialization framework
+- **anyhow** - Error handling
+- **log** - Logging framework
+- **env_logger** - Environment-based logging configuration
 
 ### Architecture
 
@@ -118,12 +153,24 @@ The project follows a modular architecture:
 
 1. **Collectors**: Responsible for gathering network statistics
    - `BandwidthCollector` tracks network interface speeds and data usage
+   - `PacketCollector` captures and processes network packets
 
-2. **CLI Module**: Handles command-line interface
+2. **Models**: Define data structures and types
+   - `NetworkPacket` represents captured packet data
+   - `PacketStatistics` for aggregated packet metrics
+
+3. **Analyzers**: Process and analyze network data
+   - `ProtocolAnalyzer` identifies protocols and security patterns
+
+4. **Storage**: Persist data for analysis and reporting
+   - `PacketStorage` manages SQLite database operations
+
+5. **CLI Module**: Handles command-line interface
    - `commands.rs` defines available commands and arguments
+   - `packet_commands.rs` handles packet monitoring commands
    - `dashboard.rs` implements the live monitoring UI
 
-3. **Main Application**: Coordinates between modules and executes commands
+6. **Main Application**: Coordinates between modules and executes commands
 
 ## Development
 
@@ -162,16 +209,20 @@ cargo clippy -- -D warnings
 - [x] Simple CLI interface
 - [x] Live dashboard with Ratatui
 
-### Phase 2: Enhanced Analysis (Planned)
+### Phase 2: Packet Intelligence ✅
+- [x] Packet capture and analysis
+- [x] Protocol-level monitoring
+- [x] Security event detection
+- [x] Local data storage with SQLite
+- [x] Real-time packet monitoring dashboard
+- [x] Traffic pattern analysis
+
+### Phase 3: Enhanced Analysis (Planned)
 - [ ] Per-application monitoring
 - [ ] Alert system for data limits
 - [ ] Export capabilities (JSON, CSV, HTML)
-- [ ] Local data storage with SQLite
-
-### Phase 3: Packet Intelligence (Planned)
-- [ ] Packet capture and analysis
-- [ ] Protocol-level monitoring
-- [ ] Security features
+- [ ] Geolocation tracking
+- [ ] Advanced security analysis
 
 ### Phase 4: Advanced Features (Planned)
 - [ ] Usage prediction with ML
@@ -185,9 +236,9 @@ No current known issues. See [docs/KNOWN_ISSUES.md](docs/KNOWN_ISSUES.md) for in
 ## Known Limitations
 
 - Initial speed readings show 0.00 B/s (requires previous data point for calculation)
-- Packet capture features require elevated privileges (not yet implemented)
+- Packet capture features require elevated privileges (sudo/administrator)
 - Per-application monitoring not yet available
-- Historical data storage not yet implemented
+- Some advanced security analysis features in development
 
 ## Contributing
 

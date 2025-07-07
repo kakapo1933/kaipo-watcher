@@ -84,29 +84,36 @@ The project will use **Ratatui** for the terminal UI, particularly for the `moni
 
 Primary commands as per specification:
 
-- `monitor live` - Real-time dashboard
-- `monitor status` - Quick current status
-- `monitor report` - Usage reports
-- `monitor history` - Historical data
-- `monitor packets` - Packet analysis
-- `monitor config` - Configuration management
+- `live` - Real-time dashboard
+- `status` - Quick current status
+- `packets` - Real-time packet monitoring
+- `analyze` - Traffic pattern analysis
+- `report` - Usage reports (planned)
+- `history` - Historical data (planned)
+- `export` - Data export (planned)
 
 ## Getting Started
 
-Since this is a new Rust project, the first steps would be:
+The project is now fully functional with core features implemented:
 
-1. Initialize with `cargo new kaipo-watcher --bin`
-2. Set up the project structure following the architecture plan
-3. Add key dependencies to Cargo.toml:
-   - `clap` for CLI argument parsing
-   - `tokio` for async runtime
-   - `ratatui` for terminal UI
-   - `crossterm` for terminal manipulation
-   - `serde` for serialization
-   - `chrono` for time handling
-   - Platform-specific network libraries
-4. Implement basic bandwidth monitoring
-5. Gradually add features per the roadmap in OVERVIEW.md
+**Current Dependencies:**
+- `clap` for CLI argument parsing with derive macros
+- `tokio` for async runtime and non-blocking I/O
+- `ratatui` for terminal UI and live dashboard
+- `crossterm` for cross-platform terminal manipulation
+- `pnet` for low-level packet capture
+- `rusqlite` for SQLite database storage
+- `serde` for serialization (JSON/CSV)
+- `chrono` for time handling
+- `anyhow` for error handling
+- `log` and `env_logger` for logging
+
+**Key Implementation Highlights:**
+1. ✅ Async packet capture with platform-specific privilege handling
+2. ✅ Protocol analysis with security pattern detection
+3. ✅ Time-series database optimization for packet storage
+4. ✅ Real-time monitoring with bounded channel buffering
+5. ✅ Cross-platform support (Linux, macOS, Windows)
 
 ## Common Rust Commands
 
@@ -126,6 +133,11 @@ cargo fmt
 
 # Documentation
 cargo doc --open
+
+# Run specific commands (examples)
+cargo run -- status --detailed
+cargo run -- packets --interface eth0 --protocol tcp
+cargo run -- analyze --period 1h --security --protocols
 ```
 
 ## Technical Requirements

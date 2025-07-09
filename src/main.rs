@@ -4,19 +4,14 @@ mod collectors; // Network data collection modules
 mod models;     // Data models and types
 mod analyzers;  // Protocol analysis modules
 mod storage;    // Data persistence layer
+mod dashboard;  // Terminal UI dashboard
 
 use anyhow::Result;
 use clap::Parser;
 use cli::{commands::Commands, Cli, PacketCommandHandler};
 use storage::PacketStorage;
 use std::sync::Arc;
-
-// Include dashboard module directly from cli directory
-// This pattern allows us to keep the dashboard code separate while
-// maintaining access to the main application's modules
-mod dashboard {
-    include!("cli/dashboard.rs");
-}
+use dashboard::Dashboard;
 
 /// Main application entry point
 /// Handles command-line parsing and dispatches to appropriate handlers
@@ -32,7 +27,7 @@ async fn main() -> Result<()> {
     match cli.command {
         // Live monitoring with real-time dashboard
         Commands::Live { interface, packets: _, interval } => {
-            let mut dashboard = dashboard::Dashboard::new(interval, interface);
+            let mut dashboard = Dashboard::new(interval, interface);
             dashboard.run().await?;
         }
         // Display current network status (one-time snapshot)

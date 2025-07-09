@@ -106,8 +106,10 @@ kaipo-watcher/
 │   ├── cli/                 # Command-line interface
 │   │   ├── mod.rs
 │   │   ├── commands.rs      # CLI command definitions
-│   │   ├── packet_commands.rs # Packet monitoring commands
-│   │   └── dashboard.rs     # Live dashboard implementation
+│   │   └── packet_commands.rs # Packet monitoring commands
+│   ├── dashboard/           # Terminal UI dashboard
+│   │   ├── mod.rs
+│   │   └── live_dashboard.rs # Live dashboard implementation
 │   └── main.rs             # Application entry point
 ├── docs/                   # Documentation
 │   ├── ARCHITECTURE.md     # System architecture
@@ -168,9 +170,11 @@ The project follows a modular architecture:
 5. **CLI Module**: Handles command-line interface
    - `commands.rs` defines available commands and arguments
    - `packet_commands.rs` handles packet monitoring commands
-   - `dashboard.rs` implements the live monitoring UI
 
-6. **Main Application**: Coordinates between modules and executes commands
+6. **Dashboard Module**: Terminal UI implementation
+   - `live_dashboard.rs` implements the real-time monitoring dashboard
+
+7. **Main Application**: Coordinates between modules and executes commands
 
 ## Development
 

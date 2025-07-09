@@ -1,88 +1,187 @@
+// Core packet data models for network monitoring
+// Defines structures for representing captured network packets and related statistics
+
 use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::net::IpAddr;
 
+/// Core data structure representing a captured network packet
+/// Contains all relevant metadata for analysis and storage
+/// 
+/// # Examples
+/// 
+/// ```rust
+/// let packet = NetworkPacket::new(
+///     "eth0".to_string(),
+///     1500,
+///     PacketProtocol::IPv4,
+///     PacketDirection::Outbound
+/// );
+/// ```
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct NetworkPacket {
+    /// When the packet was captured (local system time)
     pub timestamp: DateTime<Local>,
+    /// Network interface name where packet was captured (e.g., "eth0", "wlan0")
     pub interface: String,
+    /// Total packet size in bytes including headers
     pub size_bytes: u64,
+    /// Network layer protocol (IPv4, IPv6, etc.)
     pub protocol: PacketProtocol,
+    /// Transport layer protocol (TCP, UDP, ICMP, etc.)
     pub transport_protocol: TransportProtocol,
+    /// Source IP address (None for non-IP packets)
     pub source_addr: Option<IpAddr>,
+    /// Destination IP address (None for non-IP packets)
     pub dest_addr: Option<IpAddr>,
+    /// Source port number (None for protocols without ports)
     pub source_port: Option<u16>,
+    /// Destination port number (None for protocols without ports)
     pub dest_port: Option<u16>,
+    /// Traffic direction relative to the monitoring system
     pub direction: PacketDirection,
 }
 
+/// Represents the network layer protocol of a captured packet
+/// Used to classify packets at the IP level
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum PacketProtocol {
+    /// Ethernet frame (Layer 2)
     Ethernet,
+    /// Internet Protocol version 4
     IPv4,
+    /// Internet Protocol version 6
     IPv6,
+    /// Address Resolution Protocol
     ARP,
+    /// Other protocol types identified by EtherType
     Other(u16),
 }
 
+/// Represents the transport layer protocol of a captured packet
+/// Used to classify packets at the TCP/UDP level
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TransportProtocol {
+    /// Transmission Control Protocol
     TCP,
+    /// User Datagram Protocol
     UDP,
+    /// Internet Control Message Protocol
     ICMP,
+    /// Internet Control Message Protocol version 6
     ICMPv6,
+    /// Other transport protocols identified by IP protocol number
     Other(u8),
 }
 
+/// Indicates the direction of packet flow relative to the monitoring system
+/// Used for traffic analysis and bandwidth calculations
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum PacketDirection {
+    /// Traffic coming into the system
     Inbound,
+    /// Traffic going out from the system
     Outbound,
+    /// Traffic between local interfaces (loopback)
     Local,
 }
 
+/// Comprehensive statistics for a time period of packet capture
+/// Aggregates multiple metrics for performance analysis and reporting
+/// 
+/// # Usage
+/// 
+/// This structure is used to store periodic snapshots of network activity,
+/// typically collected every few seconds during monitoring.
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PacketStatistics {
+    /// Total number of packets captured in this period
     pub total_packets: u64,
+    /// Total bytes captured in this period
     pub total_bytes: u64,
+    /// Average packets per second during this period
     pub packets_per_second: f64,
+    /// Average bytes per second during this period (bandwidth)
     pub bytes_per_second: f64,
+    /// Breakdown of traffic by transport protocol
     pub protocol_distribution: ProtocolDistribution,
+    /// Most active network connections during this period
     pub top_connections: Vec<ConnectionInfo>,
+    /// Start of the measurement period
     pub start_time: DateTime<Local>,
+    /// End of the measurement period
     pub end_time: DateTime<Local>,
 }
 
+/// Statistics tracking the distribution of different transport protocols
+/// Used for aggregating packet counts and byte totals by protocol type
+/// 
+/// # Fields
+/// 
+/// All fields track both packet counts and byte totals for each protocol
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct ProtocolDistribution {
+    /// Number of TCP packets captured
     pub tcp_packets: u64,
+    /// Number of UDP packets captured
     pub udp_packets: u64,
+    /// Number of ICMP packets captured
     pub icmp_packets: u64,
+    /// Number of packets using other protocols
     pub other_packets: u64,
+    /// Total bytes transferred via TCP
     pub tcp_bytes: u64,
+    /// Total bytes transferred via UDP
     pub udp_bytes: u64,
+    /// Total bytes transferred via ICMP
     pub icmp_bytes: u64,
+    /// Total bytes transferred via other protocols
     pub other_bytes: u64,
 }
 
+/// Information about a network connection derived from packet analysis
+/// Used to track and display the most active connections
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ConnectionInfo {
+    /// Source address and port in "IP:port" format
     pub source: String,
+    /// Destination address and port in "IP:port" format
     pub destination: String,
+    /// Transport protocol used by this connection
     pub protocol: TransportProtocol,
+    /// Total number of packets in this connection
     pub packets: u64,
+    /// Total bytes transferred in this connection
     pub bytes: u64,
 }
 
+/// Represents a known application-layer protocol
+/// Used for protocol identification during packet analysis
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ApplicationProtocol {
+    /// Human-readable name of the protocol (e.g., "HTTP", "HTTPS")
     pub name: String,
+    /// Well-known port number for this protocol
     pub port: u16,
+    /// Underlying transport protocol (TCP/UDP)
     pub transport: TransportProtocol,
 }
 
 impl NetworkPacket {
+    /// Creates a new NetworkPacket with basic information
+    /// 
+    /// # Arguments
+    /// 
+    /// * `interface` - Network interface name (e.g., "eth0")
+    /// * `size_bytes` - Total packet size including headers
+    /// * `protocol` - Network layer protocol
+    /// * `direction` - Traffic direction (inbound/outbound/local)
+    /// 
+    /// # Returns
+    /// 
+    /// A new NetworkPacket with timestamp set to current time
+    /// and optional fields (addresses, ports) set to None
     pub fn new(
         interface: String,
         size_bytes: u64,

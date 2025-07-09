@@ -1,3 +1,7 @@
+// ProtocolAnalyzer: Advanced packet analysis and protocol identification
+// Performs deep packet inspection to identify application protocols and security patterns
+// Maintains connection state and generates security alerts
+
 use crate::models::{
     common_application_protocols, ApplicationProtocol, NetworkPacket, TransportProtocol,
 };
@@ -5,18 +9,52 @@ use anyhow::Result;
 use std::collections::HashMap;
 use std::net::{IpAddr, Ipv6Addr};
 
+/// Advanced protocol analyzer for network traffic inspection
+/// 
+/// Performs deep packet inspection to identify application-layer protocols,
+/// track network connections, and detect security anomalies. Uses heuristic
+/// analysis based on port numbers, packet patterns, and traffic characteristics.
+/// 
+/// # Features
+/// 
+/// - Application protocol identification (HTTP, HTTPS, DNS, etc.)
+/// - Connection state tracking with automatic cleanup
+/// - Security pattern detection (suspicious ports, unencrypted sensitive data)
+/// - Traffic classification (Web, Email, P2P, etc.)
+/// - Geolocation analysis (planned)
+/// 
+/// # Example
+/// 
+/// ```rust
+/// let mut analyzer = ProtocolAnalyzer::new();
+/// let analysis = analyzer.analyze_packet(&packet)?;
+/// 
+/// if let Some(protocol) = analysis.application_protocol {
+///     println!("Detected {protocol} traffic");
+/// }
+/// ```
 pub struct ProtocolAnalyzer {
+    /// Database of well-known protocols mapped by port number
     known_protocols: HashMap<u16, ApplicationProtocol>,
+    /// Aggregate statistics for all analyzed protocols
     protocol_stats: ProtocolStats,
+    /// Active connection tracking for state analysis
     connection_tracker: ConnectionTracker,
 }
 
+/// Statistical counters for protocol analysis
+/// Tracks various metrics to provide insights into network traffic patterns
 #[derive(Debug, Clone, Default)]
 pub struct ProtocolStats {
+    /// Total number of TCP connections observed
     pub tcp_connections: u64,
+    /// Total number of UDP sessions tracked
     pub udp_sessions: u64,
+    /// Total ICMP packets processed
     pub icmp_packets: u64,
+    /// DNS queries detected
     pub dns_queries: u64,
+    /// HTTP requests identified
     pub http_requests: u64,
     pub https_connections: u64,
     pub ssh_connections: u64,

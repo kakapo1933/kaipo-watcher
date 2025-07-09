@@ -20,18 +20,71 @@ use crate::models::{
     TransportProtocol,
 };
 
+/// High-performance packet collector for network monitoring
+/// 
+/// Uses libpnet for raw packet capture with platform-specific optimizations.
+/// Implements producer-consumer pattern with bounded channels for memory safety.
+/// 
+/// # Architecture
+/// 
+/// ```text
+/// Raw Packets -> pnet capture -> Channel -> PacketCollector -> NetworkPacket
+/// ```
+/// 
+/// # Platform Requirements
+/// 
+/// - Linux: Requires CAP_NET_RAW capability or root privileges
+/// - macOS: Requires root privileges for BPF access
+/// - Windows: Requires Administrator privileges and Npcap
+/// 
+/// # Example
+/// 
+/// ```rust
+/// let mut collector = PacketCollector::new("eth0".to_string())?;
+/// collector.start().await?;
+/// 
+/// while let Some(packet) = collector.receive_packet().await {
+///     println!("Captured {} bytes", packet.size_bytes);
+/// }
+/// ```
 pub struct PacketCollector {
+    /// Network interface to monitor (e.g., "eth0", "wlan0")
     interface_name: String,
+    /// Channel sender for captured packets (producer side)
     packet_sender: Sender<NetworkPacket>,
+    /// Channel receiver for captured packets (consumer side)
     packet_receiver: Arc<Mutex<Receiver<NetworkPacket>>>,
+    /// Shared statistics for monitoring capture performance
     stats: Arc<Mutex<PacketStatistics>>,
+    /// Atomic flag to control capture loop execution
     running: Arc<Mutex<bool>>,
 }
 
 impl PacketCollector {
+    /// Creates a new packet collector for the specified interface
+    /// 
+    /// # Arguments
+    /// 
+    /// * `interface_name` - Network interface to capture packets from
+    /// 
+    /// # Returns
+    /// 
+    /// A new PacketCollector instance with bounded channel (10,000 packets)
+    /// and initialized statistics. The collector is created in stopped state.
+    /// 
+    /// # Example
+    /// 
+    /// ```rust
+    /// let collector = PacketCollector::new("eth0".to_string())?;
+    /// ```
     pub fn new(interface_name: String) -> Result<Self> {
+        // Create bounded channel to prevent memory exhaustion under high traffic
+        // Buffer size of 10,000 packets provides good balance between
+        // responsiveness and memory usage
         let (sender, receiver) = mpsc::channel(10000);
         
+        // Initialize packet statistics with zero values
+        // These will be updated as packets are captured and processed
         let stats = PacketStatistics {
             total_packets: 0,
             total_bytes: 0,
@@ -52,7 +105,25 @@ impl PacketCollector {
         })
     }
 
+    /// Starts packet capture on the configured interface
+    /// 
+    /// This method spawns a background task that performs the actual packet capture
+    /// using libpnet. The captured packets are parsed and sent through the internal
+    /// channel for consumption by `receive_packet()`.
+    /// 
+    /// # Errors
+    /// 
+    /// - Returns error if interface doesn't exist or lacks permissions
+    /// - Returns error if packet capture cannot be initialized
+    /// - On Windows, requires Npcap to be installed
+    /// 
+    /// # Platform Notes
+    /// 
+    /// - Linux: Requires CAP_NET_RAW or root privileges
+    /// - macOS: Requires root privileges for BPF device access
+    /// - Windows: Requires Administrator privileges and Npcap driver
     pub async fn start(&self) -> Result<()> {
+        // Check if capture is already running to prevent duplicate tasks
         let mut running = self.running.lock().await;
         if *running {
             return Ok(());
@@ -60,12 +131,15 @@ impl PacketCollector {
         *running = true;
         drop(running);
 
+        // Locate the specified network interface
+        // This validates that the interface exists and is available for capture
         let interface = self
             .find_interface(&self.interface_name)
             .context("Failed to find network interface")?;
 
         info!("Starting packet capture on interface: {}", interface.name);
 
+        // Clone shared references for use in the capture task
         let stats_clone = Arc::clone(&self.stats);
         let running_clone = Arc::clone(&self.running);
         let sender = self.packet_sender.clone();

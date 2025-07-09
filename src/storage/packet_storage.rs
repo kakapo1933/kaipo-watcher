@@ -1,3 +1,7 @@
+// PacketStorage: High-performance database layer for packet analysis
+// Provides efficient storage and retrieval of network packet data and analysis results
+// Uses SQLite with optimizations for time-series data and concurrent access
+
 use crate::analyzers::{AnalysisResult, SecurityFlag, TrafficType};
 use crate::models::{NetworkPacket, PacketStatistics};
 use crate::storage::schema::{create_tables, setup_data_retention};
@@ -10,6 +14,34 @@ use std::path::Path;
 use std::sync::{Arc, Mutex};
 use tokio::time::{interval, Duration};
 
+/// High-performance storage system for network packet analysis data
+/// 
+/// Uses SQLite with WAL mode for concurrent access and implements batched
+/// writes for optimal performance under high packet rates. Automatically
+/// manages database schema and provides data retention policies.
+/// 
+/// # Features
+/// 
+/// - Batched writes for high-throughput packet capture
+/// - WAL mode for concurrent read/write access
+/// - Automatic database schema creation and migration
+/// - Time-series optimizations for packet data
+/// - Background flush tasks for reliability
+/// - Data retention and cleanup policies
+/// 
+/// # Performance
+/// 
+/// - Designed for >10,000 packets per second
+/// - Configurable batch sizes to balance latency vs throughput
+/// - Indexed queries for fast time-range analysis
+/// 
+/// # Example
+/// 
+/// ```rust
+/// let storage = PacketStorage::new("./data/packets.db", 100)?;
+/// storage.analyze_packet_for_storage(&packet, &analysis)?;
+/// let summary = storage.get_traffic_summary("eth0", since)?;
+/// ```
 pub struct PacketStorage {
     conn: Arc<Mutex<Connection>>,
     batch_size: usize,

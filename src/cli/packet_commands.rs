@@ -1,3 +1,7 @@
+// CLI Packet Commands: User interface for packet monitoring operations
+// Provides command-line handlers for real-time packet capture and traffic analysis
+// Implements interactive displays with live statistics and filtering options
+
 use crate::analyzers::{AnalysisResult, ProtocolAnalyzer, TrafficType};
 use crate::collectors::PacketCollector;
 use crate::storage::PacketStorage;
@@ -10,6 +14,33 @@ use std::time::Duration as StdDuration;
 use tokio::sync::Mutex;
 use tokio::time::{interval, timeout};
 
+/// Command handler for packet monitoring and analysis operations
+/// 
+/// Coordinates between packet collection, protocol analysis, and data storage
+/// to provide comprehensive network monitoring capabilities through CLI commands.
+/// 
+/// # Commands Supported
+/// 
+/// - Real-time packet monitoring with live statistics
+/// - Historical traffic analysis with filtering
+/// - Protocol distribution analysis
+/// - Security event detection and reporting
+/// 
+/// # Example
+/// 
+/// ```rust
+/// let storage = Arc::new(PacketStorage::new("./data/packets.db", 100)?);
+/// let handler = PacketCommandHandler::new(storage);
+/// 
+/// // Start real-time monitoring
+/// handler.handle_packets_command(
+///     Some("eth0".to_string()),
+///     Some("tcp".to_string()),
+///     Some("60s".to_string()),
+///     true,
+///     10
+/// ).await?;
+/// ```
 pub struct PacketCommandHandler {
     storage: Arc<PacketStorage>,
     analyzer: Arc<Mutex<ProtocolAnalyzer>>,

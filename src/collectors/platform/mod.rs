@@ -1,12 +1,22 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+// Platform-specific packet capture implementations
+// Provides optimized packet capture for different operating systems
+// Handles platform-specific privilege requirements and performance optimizations
+
+/// Linux packet capture implementation
+/// Uses AF_PACKET sockets with CAP_NET_RAW capability requirements
 #[cfg(target_os = "linux")]
 pub mod linux;
 
+/// macOS packet capture implementation  
+/// Uses Berkeley Packet Filter (BPF) devices requiring root privileges
 #[cfg(target_os = "macos")]
 pub mod macos;
 
+/// Windows packet capture implementation
+/// Uses Npcap driver with Administrator privilege requirements
 #[cfg(target_os = "windows")]
 pub mod windows;
 

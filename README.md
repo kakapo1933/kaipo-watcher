@@ -47,7 +47,7 @@ kw status --detailed
 # Launch live monitoring dashboard
 kw live
 
-# Monitor specific interface  
+# Monitor specific interface
 kw live --interface en0
 # Or use short flags
 kw live -I en0 -i 2
@@ -116,7 +116,9 @@ kaipo-watcher/
 │   ├── DOMAIN_MODEL.md     # Domain model documentation
 │   ├── CODE_ORGANIZATION.md # Code organization guide
 │   ├── API.md             # API reference
+│   ├── DASHBOARD_MODULE.md # Dashboard module documentation
 │   └── KNOWN_ISSUES.md    # Known bugs and workarounds
+├── data/                   # Data storage (created at runtime)
 ├── Cargo.toml               # Project dependencies
 ├── CLAUDE.md                # AI assistant instructions
 ├── BLUEPRINT.md             # Project specification
@@ -129,6 +131,7 @@ kaipo-watcher/
 ### Code Documentation
 
 The codebase includes comprehensive inline documentation:
+
 - All public structs and functions have doc comments
 - Key algorithms (like bandwidth speed calculation) are explained
 - CLI commands and arguments are documented
@@ -209,11 +212,13 @@ cargo clippy -- -D warnings
 ## Roadmap
 
 ### Phase 1: Core Foundation ✅
+
 - [x] Basic bandwidth monitoring
 - [x] Simple CLI interface
 - [x] Live dashboard with Ratatui
 
 ### Phase 2: Packet Intelligence ✅
+
 - [x] Packet capture and analysis
 - [x] Protocol-level monitoring
 - [x] Security event detection
@@ -222,6 +227,7 @@ cargo clippy -- -D warnings
 - [x] Traffic pattern analysis
 
 ### Phase 3: Enhanced Analysis (Planned)
+
 - [ ] Per-application monitoring
 - [ ] Alert system for data limits
 - [ ] Export capabilities (JSON, CSV, HTML)
@@ -229,6 +235,7 @@ cargo clippy -- -D warnings
 - [ ] Advanced security analysis
 
 ### Phase 4: Advanced Features (Planned)
+
 - [ ] Usage prediction with ML
 - [ ] Web interface
 - [ ] Cloud sync capabilities
@@ -255,3 +262,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Author
 
 Kaipo Chen
+

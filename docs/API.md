@@ -134,7 +134,7 @@ pub enum Commands {
 
 ### `dashboard::Dashboard`
 
-Terminal UI dashboard for live monitoring (located in the `dashboard` module).
+Terminal UI dashboard for live monitoring (located in the `dashboard` module, see [DASHBOARD_MODULE.md](./DASHBOARD_MODULE.md) for detailed documentation).
 
 #### Methods
 
@@ -156,7 +156,7 @@ Starts the interactive dashboard.
 ### Basic Usage
 
 ```rust
-use kaipo_watcher::{collectors::BandwidthCollector, cli::Cli, dashboard::Dashboard};
+use kaipo_watcher::{collectors::BandwidthCollector, cli::{Cli, commands::Commands}, dashboard::Dashboard};
 use clap::Parser;
 
 #[tokio::main]

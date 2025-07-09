@@ -8,21 +8,27 @@ This is the **Internet Monitor CLI Tool** (kaipo-watcher) project - a command-li
 
 ## Project Status
 
-⚠️ **New Project**: No implementation exists yet. Only the specification document is available in `.claude/OVERVIEW.md`.
+✅ **Phase 2 Complete**: Core functionality implemented including real-time monitoring, packet capture, and traffic analysis. The project is now actively developed with a modular architecture.
 
 ## Architecture Plan
 
-Based on the specification, the project will have the following structure:
+The project follows a modular architecture:
 
 ```
 src/
 ├── collectors/       # Data gathering modules (bandwidth, usage, packets, protocols)
 ├── storage/         # Data persistence (database, cache, backup)
 ├── analyzers/       # Usage analysis (trends, alerts, costs, anomalies)
-├── exporters/       # Output formats (JSON, CSV, HTML, CLI)
-├── config/          # Configuration management
-└── cli/            # Command-line interface
+├── cli/            # Command-line interface and commands
+├── dashboard/      # Terminal UI dashboard (separated from CLI)
+├── models/         # Data models and types
+└── main.rs         # Application entry point
 ```
+
+### Recent Architectural Changes
+
+- **Dashboard Module Separation**: The dashboard functionality has been moved from `cli/dashboard.rs` to a dedicated `dashboard/` module for better organization and separation of concerns.
+- **Modular Design**: Each module has clear responsibilities and minimal coupling with other modules.
 
 ## Key Features to Implement
 
@@ -69,16 +75,25 @@ This project will be implemented in **Rust** for:
 
 ### Ratatui Implementation Notes
 
-The project will use **Ratatui** for the terminal UI, particularly for the `monitor live` command dashboard. Key considerations:
+The project uses **Ratatui** for the terminal UI in the `dashboard` module. Implementation details:
 
-1. **Dashboard Layout**: Use Ratatui's layout system to create the bordered sections shown in BLUEPRINT.md
-2. **Real-time Updates**: Combine with tokio for async updates without blocking the UI
-3. **Widgets to Use**:
-   - `Block` with borders for the main frame
-   - `Gauge` for the progress bar (monthly usage)
-   - `List` for top applications
+1. **Dashboard Module**: Located in `src/dashboard/live_dashboard.rs` (separated from CLI module)
+2. **Dashboard Layout**: Uses Ratatui's layout system with 4 main sections:
+   - Header: Title and timestamp
+   - Current Speed: Real-time bandwidth statistics
+   - Interface List: Per-interface metrics with packet counts
+   - Footer: Keyboard shortcuts
+3. **Real-time Updates**: Combined with tokio for async updates without blocking the UI
+4. **Widgets Used**:
+   - `Block` with borders for section frames
+   - `List` for network interfaces
    - `Paragraph` for stats display
-4. **Color Scheme**: Use Ratatui's styling for status indicators (green for good, yellow for warning, red for alerts)
+   - `Line` and `Span` for styled text
+5. **Color Scheme**: 
+   - Green for download speeds
+   - Blue for upload speeds
+   - Yellow for timestamps
+   - Cyan for interface names
 
 ### CLI Command Structure
 

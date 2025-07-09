@@ -132,9 +132,9 @@ pub enum Commands {
 }
 ```
 
-### `cli::Dashboard`
+### `dashboard::Dashboard`
 
-Terminal UI dashboard for live monitoring.
+Terminal UI dashboard for live monitoring (located in the `dashboard` module).
 
 #### Methods
 
@@ -156,7 +156,7 @@ Starts the interactive dashboard.
 ### Basic Usage
 
 ```rust
-use kaipo_watcher::{collectors::BandwidthCollector, cli::Cli};
+use kaipo_watcher::{collectors::BandwidthCollector, cli::Cli, dashboard::Dashboard};
 use clap::Parser;
 
 #[tokio::main]
@@ -168,6 +168,10 @@ async fn main() -> Result<()> {
             let mut collector = BandwidthCollector::new();
             let stats = collector.collect()?;
             // Display stats...
+        }
+        Commands::Live { interface, interval, .. } => {
+            let mut dashboard = Dashboard::new(interval, interface);
+            dashboard.run().await?;
         }
         _ => {}
     }

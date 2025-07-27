@@ -54,6 +54,10 @@ if-addrs = "0.13"
 # Async traits
 async-trait = "0.1"
 
+# Graphing and visualization
+plotters = "0.3"
+textplots = "0.8"
+
 # Platform-specific dependencies
 [target.'cfg(target_os = "linux")'.dependencies]
 nix = { version = "0.29", features = ["user"] }
@@ -63,3 +67,6 @@ libc = "0.2"
 
 [dev-dependencies]
 tempfile = "3.0"
+tokio-test = "0.4"
+criterion = "0.5"
+reqwest = "0.11"

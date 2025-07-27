@@ -62,6 +62,7 @@ pub struct ProtocolStats {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct ConnectionInfo {
     pub source: IpAddr,
     pub destination: IpAddr,
@@ -126,12 +127,14 @@ impl ConnectionTracker {
         }
     }
 
+    #[allow(dead_code)]
     pub fn get_top_connections(&self, limit: usize) -> Vec<&ConnectionInfo> {
         let mut connections: Vec<&ConnectionInfo> = self.connections.values().collect();
         connections.sort_by(|a, b| b.bytes.cmp(&a.bytes));
         connections.into_iter().take(limit).collect()
     }
 
+    #[allow(dead_code)]
     pub fn get_connection_count(&self) -> usize {
         self.connections.len()
     }
@@ -177,14 +180,17 @@ impl ProtocolAnalyzer {
         Ok(result)
     }
 
+    #[allow(dead_code)]
     pub fn get_stats(&self) -> &ProtocolStats {
         &self.protocol_stats
     }
 
+    #[allow(dead_code)]
     pub fn get_top_connections(&self, limit: usize) -> Vec<&ConnectionInfo> {
         self.connection_tracker.get_top_connections(limit)
     }
 
+    #[allow(dead_code)]
     pub fn get_connection_count(&self) -> usize {
         self.connection_tracker.get_connection_count()
     }
@@ -197,8 +203,8 @@ impl ProtocolAnalyzer {
         }
 
         match packet.transport_protocol {
-            TransportProtocol::TCP => self.analyze_tcp_payload(packet),
-            TransportProtocol::UDP => self.analyze_udp_payload(packet),
+            TransportProtocol::Tcp => self.analyze_tcp_payload(packet),
+            TransportProtocol::Udp => self.analyze_udp_payload(packet),
             _ => None,
         }
     }
@@ -400,9 +406,9 @@ impl ProtocolAnalyzer {
 
     fn update_stats(&mut self, packet: &NetworkPacket, result: &AnalysisResult) {
         match packet.transport_protocol {
-            TransportProtocol::TCP => self.protocol_stats.tcp_connections += 1,
-            TransportProtocol::UDP => self.protocol_stats.udp_sessions += 1,
-            TransportProtocol::ICMP | TransportProtocol::ICMPv6 => {
+            TransportProtocol::Tcp => self.protocol_stats.tcp_connections += 1,
+            TransportProtocol::Udp => self.protocol_stats.udp_sessions += 1,
+            TransportProtocol::Icmp | TransportProtocol::ICMPv6 => {
                 self.protocol_stats.icmp_packets += 1
             }
             _ => self.protocol_stats.other_protocols += 1,
@@ -424,6 +430,7 @@ impl ProtocolAnalyzer {
 pub struct AnalysisResult {
     pub application_protocol: Option<String>,
     pub is_encrypted: bool,
+    #[allow(dead_code)]
     pub traffic_type: TrafficType,
     pub security_flags: Vec<SecurityFlag>,
     pub flow_direction: FlowDirection,
@@ -436,7 +443,9 @@ pub enum TrafficType {
     Email,
     FileTransfer,
     Streaming,
+    #[allow(dead_code)]
     Gaming,
+    #[allow(dead_code)]
     VoIP,
     Local,
     Other,
@@ -447,7 +456,9 @@ pub enum SecurityFlag {
     SuspiciousPort,
     UnencryptedSensitive,
     HighFrequency,
+    #[allow(dead_code)]
     UnknownProtocol,
+    #[allow(dead_code)]
     LargePayload,
 }
 
@@ -459,6 +470,7 @@ pub enum FlowDirection {
 }
 
 #[derive(Debug, Clone)]
+#[allow(dead_code)]
 pub struct GeolocationInfo {
     pub country: String,
     pub region: String,
@@ -488,7 +500,7 @@ mod tests {
             PacketDirection::Outbound,
         );
         packet.dest_port = Some(80);
-        packet.transport_protocol = TransportProtocol::TCP;
+        packet.transport_protocol = TransportProtocol::Tcp;
         
         let result = analyzer.analyze_packet(&packet).unwrap();
         assert_eq!(result.application_protocol, Some("HTTP".to_string()));
@@ -507,7 +519,7 @@ mod tests {
             PacketDirection::Outbound,
         );
         packet.dest_port = Some(443);
-        packet.transport_protocol = TransportProtocol::TCP;
+        packet.transport_protocol = TransportProtocol::Tcp;
         
         let result = analyzer.analyze_packet(&packet).unwrap();
         assert_eq!(result.application_protocol, Some("HTTPS".to_string()));

@@ -54,7 +54,7 @@ pub enum PacketProtocol {
     /// Internet Protocol version 6
     IPv6,
     /// Address Resolution Protocol
-    ARP,
+    Arp,
     /// Other protocol types identified by EtherType
     Other(u16),
 }
@@ -64,11 +64,11 @@ pub enum PacketProtocol {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub enum TransportProtocol {
     /// Transmission Control Protocol
-    TCP,
+    Tcp,
     /// User Datagram Protocol
-    UDP,
+    Udp,
     /// Internet Control Message Protocol
-    ICMP,
+    Icmp,
     /// Internet Control Message Protocol version 6
     ICMPv6,
     /// Other transport protocols identified by IP protocol number
@@ -202,21 +202,25 @@ impl NetworkPacket {
         }
     }
 
+    #[allow(dead_code)]
     pub fn is_tcp(&self) -> bool {
-        matches!(self.transport_protocol, TransportProtocol::TCP)
+        matches!(self.transport_protocol, TransportProtocol::Tcp)
     }
 
+    #[allow(dead_code)]
     pub fn is_udp(&self) -> bool {
-        matches!(self.transport_protocol, TransportProtocol::UDP)
+        matches!(self.transport_protocol, TransportProtocol::Udp)
     }
 
+    #[allow(dead_code)]
     pub fn is_icmp(&self) -> bool {
         matches!(
             self.transport_protocol,
-            TransportProtocol::ICMP | TransportProtocol::ICMPv6
+            TransportProtocol::Icmp | TransportProtocol::ICMPv6
         )
     }
 
+    #[allow(dead_code)]
     pub fn connection_string(&self) -> String {
         match (self.source_addr, self.source_port, self.dest_addr, self.dest_port) {
             (Some(src_ip), Some(src_port), Some(dst_ip), Some(dst_port)) => {
@@ -234,15 +238,15 @@ impl NetworkPacket {
 impl ProtocolDistribution {
     pub fn add_packet(&mut self, packet: &NetworkPacket) {
         match packet.transport_protocol {
-            TransportProtocol::TCP => {
+            TransportProtocol::Tcp => {
                 self.tcp_packets += 1;
                 self.tcp_bytes += packet.size_bytes;
             }
-            TransportProtocol::UDP => {
+            TransportProtocol::Udp => {
                 self.udp_packets += 1;
                 self.udp_bytes += packet.size_bytes;
             }
-            TransportProtocol::ICMP | TransportProtocol::ICMPv6 => {
+            TransportProtocol::Icmp | TransportProtocol::ICMPv6 => {
                 self.icmp_packets += 1;
                 self.icmp_bytes += packet.size_bytes;
             }
@@ -253,10 +257,12 @@ impl ProtocolDistribution {
         }
     }
 
+    #[allow(dead_code)]
     pub fn total_packets(&self) -> u64 {
         self.tcp_packets + self.udp_packets + self.icmp_packets + self.other_packets
     }
 
+    #[allow(dead_code)]
     pub fn total_bytes(&self) -> u64 {
         self.tcp_bytes + self.udp_bytes + self.icmp_bytes + self.other_bytes
     }
@@ -268,61 +274,61 @@ pub fn common_application_protocols() -> HashMap<u16, ApplicationProtocol> {
     protocols.insert(80, ApplicationProtocol {
         name: "HTTP".to_string(),
         port: 80,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(443, ApplicationProtocol {
         name: "HTTPS".to_string(),
         port: 443,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(22, ApplicationProtocol {
         name: "SSH".to_string(),
         port: 22,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(53, ApplicationProtocol {
         name: "DNS".to_string(),
         port: 53,
-        transport: TransportProtocol::UDP,
+        transport: TransportProtocol::Udp,
     });
     
     protocols.insert(25, ApplicationProtocol {
         name: "SMTP".to_string(),
         port: 25,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(110, ApplicationProtocol {
         name: "POP3".to_string(),
         port: 110,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(143, ApplicationProtocol {
         name: "IMAP".to_string(),
         port: 143,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(3389, ApplicationProtocol {
         name: "RDP".to_string(),
         port: 3389,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(21, ApplicationProtocol {
         name: "FTP".to_string(),
         port: 21,
-        transport: TransportProtocol::TCP,
+        transport: TransportProtocol::Tcp,
     });
     
     protocols.insert(67, ApplicationProtocol {
         name: "DHCP".to_string(),
         port: 67,
-        transport: TransportProtocol::UDP,
+        transport: TransportProtocol::Udp,
     });
     
     protocols
@@ -357,7 +363,7 @@ mod tests {
             PacketProtocol::IPv4,
             PacketDirection::Inbound,
         );
-        packet.transport_protocol = TransportProtocol::TCP;
+        packet.transport_protocol = TransportProtocol::Tcp;
         
         dist.add_packet(&packet);
         

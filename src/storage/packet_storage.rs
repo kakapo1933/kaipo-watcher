@@ -92,11 +92,14 @@ pub struct SecurityEvent {
 
 #[derive(Debug, Clone)]
 pub struct TrafficSummary {
+    #[allow(dead_code)]
     pub timestamp: DateTime<Local>,
+    #[allow(dead_code)]
     pub interface_name: String,
     pub total_packets: u64,
     pub total_bytes: u64,
     pub protocols: HashMap<String, ProtocolStats>,
+    #[allow(dead_code)]
     pub traffic_types: HashMap<TrafficType, TrafficTypeStats>,
     pub top_connections: Vec<ConnectionSummary>,
 }
@@ -105,13 +108,17 @@ pub struct TrafficSummary {
 pub struct ProtocolStats {
     pub packets: u64,
     pub bytes: u64,
+    #[allow(dead_code)]
     pub connections: u64,
 }
 
 #[derive(Debug, Clone)]
 pub struct TrafficTypeStats {
+    #[allow(dead_code)]
     pub packets: u64,
+    #[allow(dead_code)]
     pub bytes: u64,
+    #[allow(dead_code)]
     pub connections: u64,
 }
 
@@ -119,7 +126,9 @@ pub struct TrafficTypeStats {
 pub struct ConnectionSummary {
     pub source: String,
     pub destination: String,
+    #[allow(dead_code)]
     pub protocol: String,
+    #[allow(dead_code)]
     pub packets: u64,
     pub bytes: u64,
 }
@@ -161,6 +170,7 @@ impl PacketStorage {
         Ok(storage)
     }
 
+    #[allow(dead_code)]
     pub fn store_packet_stats(&self, stats: PacketStatistics) -> Result<()> {
         let mut pending = self.pending_stats.lock().unwrap();
         pending.push(stats);
@@ -352,6 +362,7 @@ impl PacketStorage {
         })
     }
 
+    #[allow(dead_code)]
     pub fn cleanup_old_data(&self) -> Result<()> {
         let conn = self.conn.lock().unwrap();
         let tx = conn.unchecked_transaction()?;
@@ -361,6 +372,7 @@ impl PacketStorage {
         Ok(())
     }
 
+    #[allow(dead_code)]
     fn flush_packet_stats(&self) -> Result<()> {
         let stats_to_flush = {
             let mut pending = self.pending_stats.lock().unwrap();
@@ -638,7 +650,7 @@ mod tests {
         );
         packet.source_addr = Some(IpAddr::V4(Ipv4Addr::new(192, 168, 1, 1)));
         packet.dest_addr = Some(IpAddr::V4(Ipv4Addr::new(8, 8, 8, 8)));
-        packet.transport_protocol = TransportProtocol::TCP;
+        packet.transport_protocol = TransportProtocol::Tcp;
         packet.dest_port = Some(80);
 
         let analysis = AnalysisResult {

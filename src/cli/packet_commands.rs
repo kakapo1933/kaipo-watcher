@@ -232,7 +232,7 @@ impl PacketCommandHandler {
 
             for (connection, (packets, bytes)) in sorted_connections.iter().take(max_connections) {
                 if detailed {
-                    println!("  {}", connection);
+                    println!("  {connection}");
                     println!("    Packets: {}, Bytes: {}", packets, format_bytes(*bytes));
                 } else {
                     println!("  {} - {}", connection, format_bytes(*bytes));
@@ -269,7 +269,7 @@ impl PacketCommandHandler {
         let interface_name = interface.unwrap_or_else(|| "all".to_string());
 
         println!("📈 Analyzing traffic patterns");
-        println!("Interface: {}", interface_name);
+        println!("Interface: {interface_name}");
         println!("Period: {} (since {})", period, since.format("%Y-%m-%d %H:%M:%S"));
         println!();
 

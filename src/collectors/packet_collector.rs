@@ -135,7 +135,7 @@ impl PacketCollector {
         // This validates that the interface exists and is available for capture
         let interface = self
             .find_interface(&self.interface_name)
-            .context("Failed to find network interface")?;
+            .context(format!("Failed to find network interface: {}", self.interface_name))?;
 
         info!("Starting packet capture on interface: {}", interface.name);
 
@@ -146,7 +146,7 @@ impl PacketCollector {
 
         tokio::spawn(async move {
             if let Err(e) = Self::capture_loop(interface, sender, stats_clone, running_clone).await {
-                error!("Packet capture error: {}", e);
+                error!("Packet capture error: {e}");
             }
         });
 
@@ -174,6 +174,7 @@ impl PacketCollector {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn stop(&self) -> Result<()> {
         let mut running = self.running.lock().await;
         *running = false;
@@ -181,6 +182,7 @@ impl PacketCollector {
         Ok(())
     }
 
+    #[allow(dead_code)]
     pub async fn get_stats(&self) -> PacketStatistics {
         self.stats.lock().await.clone()
     }
@@ -190,9 +192,38 @@ impl PacketCollector {
     }
 
     fn find_interface(&self, name: &str) -> Option<NetworkInterface> {
-        datalink::interfaces()
-            .into_iter()
-            .find(|iface| iface.name == name || (name == "any" && iface.is_up() && !iface.is_loopback()))
+        let interfaces = datalink::interfaces();
+        
+        // Debug: log all available interfaces
+        info!("Available interfaces:");
+        for iface in &interfaces {
+            info!("  {} (up: {}, loopback: {}, ips: {})", 
+                iface.name, iface.is_up(), iface.is_loopback(), iface.ips.len());
+        }
+        
+        // If specific interface requested, find it
+        if name != "any" {
+            let found = interfaces.into_iter().find(|iface| iface.name == name);
+            if found.is_some() {
+                info!("Found requested interface: {}", name);
+            } else {
+                error!("Interface {} not found", name);
+            }
+            return found;
+        }
+        
+        // For "any", find the first active non-loopback interface
+        let found = interfaces.into_iter().find(|iface| {
+            iface.is_up() && !iface.is_loopback() && !iface.ips.is_empty()
+        });
+        
+        if let Some(ref iface) = found {
+            info!("Selected interface for 'any': {}", iface.name);
+        } else {
+            error!("No suitable interface found for 'any'");
+        }
+        
+        found
     }
 
     async fn capture_loop(
@@ -201,13 +232,26 @@ impl PacketCollector {
         stats: Arc<Mutex<PacketStatistics>>,
         running: Arc<Mutex<bool>>,
     ) -> Result<()> {
+        info!("Creating datalink channel for interface: {}", interface.name);
         let (_, mut rx) = match datalink::channel(&interface, Default::default()) {
-            Ok(Ethernet(tx, rx)) => (tx, rx),
+            Ok(Ethernet(tx, rx)) => {
+                info!("Successfully created Ethernet channel");
+                (tx, rx)
+            },
             Ok(_) => return Err(anyhow::anyhow!("Unsupported channel type")),
             Err(e) => {
-                if e.to_string().contains("Permission denied") {
+                error!("Failed to create datalink channel: {}", e);
+                let error_str = e.to_string();
+                
+                if error_str.contains("Permission denied") {
                     return Err(anyhow::anyhow!(
                         "Permission denied. Packet capture requires elevated privileges (sudo/administrator)"
+                    ));
+                } else if error_str.contains("No such file or directory") && cfg!(target_os = "macos") {
+                    return Err(anyhow::anyhow!(
+                        "Failed to access BPF devices. On macOS, fix with:\n\
+                         sudo chmod 666 /dev/bpf*\n\
+                         Or run: ./fix_bpf_permissions.sh"
                     ));
                 }
                 return Err(anyhow::anyhow!("Failed to create datalink channel: {}", e));
@@ -225,17 +269,26 @@ impl PacketCollector {
             })
             .collect();
 
-        info!("Capturing packets on {} with IPs: {:?}", interface_name, local_ips);
+        info!("Capturing packets on {interface_name} with IPs: {local_ips:?}");
 
+        let mut packet_count = 0;
         while *running.lock().await {
             match rx.next() {
                 Ok(packet) => {
+                    packet_count += 1;
+                    if packet_count % 100 == 0 {
+                        info!("Processed {} raw packets", packet_count);
+                    }
+                    
                     if let Some(ethernet) = EthernetPacket::new(packet) {
                         if let Some(network_packet) = Self::process_ethernet_packet(
                             &ethernet,
                             &interface_name,
                             &local_ips,
                         ) {
+                            info!("Captured packet: {} bytes, protocol: {:?}", 
+                                network_packet.size_bytes, network_packet.transport_protocol);
+                            
                             let mut stats_guard = stats.lock().await;
                             stats_guard.total_packets += 1;
                             stats_guard.total_bytes += network_packet.size_bytes;
@@ -243,13 +296,21 @@ impl PacketCollector {
                             drop(stats_guard);
 
                             if let Err(e) = sender.send(network_packet).await {
-                                warn!("Failed to send packet to receiver: {}", e);
+                                warn!("Failed to send packet to receiver: {e}");
                             }
+                        } else {
+                            if packet_count <= 10 {
+                                info!("Skipped packet (no network layer or filtered)");
+                            }
+                        }
+                    } else {
+                        if packet_count <= 10 {
+                            info!("Failed to parse Ethernet packet");
                         }
                     }
                 }
                 Err(e) => {
-                    error!("Error receiving packet: {}", e);
+                    error!("Error receiving packet: {e}");
                     tokio::time::sleep(Duration::from_millis(100)).await;
                 }
             }
@@ -285,21 +346,21 @@ impl PacketCollector {
 
                     match ipv4.get_next_level_protocol() {
                         IpNextHeaderProtocols::Tcp => {
-                            packet.transport_protocol = TransportProtocol::TCP;
+                            packet.transport_protocol = TransportProtocol::Tcp;
                             if let Some(tcp) = TcpPacket::new(ipv4.payload()) {
                                 packet.source_port = Some(tcp.get_source());
                                 packet.dest_port = Some(tcp.get_destination());
                             }
                         }
                         IpNextHeaderProtocols::Udp => {
-                            packet.transport_protocol = TransportProtocol::UDP;
+                            packet.transport_protocol = TransportProtocol::Udp;
                             if let Some(udp) = UdpPacket::new(ipv4.payload()) {
                                 packet.source_port = Some(udp.get_source());
                                 packet.dest_port = Some(udp.get_destination());
                             }
                         }
                         IpNextHeaderProtocols::Icmp => {
-                            packet.transport_protocol = TransportProtocol::ICMP;
+                            packet.transport_protocol = TransportProtocol::Icmp;
                         }
                         _ => {
                             packet.transport_protocol = TransportProtocol::Other(ipv4.get_next_level_protocol().0);
@@ -321,14 +382,14 @@ impl PacketCollector {
 
                     match ipv6.get_next_header() {
                         IpNextHeaderProtocols::Tcp => {
-                            packet.transport_protocol = TransportProtocol::TCP;
+                            packet.transport_protocol = TransportProtocol::Tcp;
                             if let Some(tcp) = TcpPacket::new(ipv6.payload()) {
                                 packet.source_port = Some(tcp.get_source());
                                 packet.dest_port = Some(tcp.get_destination());
                             }
                         }
                         IpNextHeaderProtocols::Udp => {
-                            packet.transport_protocol = TransportProtocol::UDP;
+                            packet.transport_protocol = TransportProtocol::Udp;
                             if let Some(udp) = UdpPacket::new(ipv6.payload()) {
                                 packet.source_port = Some(udp.get_source());
                                 packet.dest_port = Some(udp.get_destination());
@@ -344,7 +405,7 @@ impl PacketCollector {
                 }
             }
             EtherTypes::Arp => {
-                packet.protocol = PacketProtocol::ARP;
+                packet.protocol = PacketProtocol::Arp;
             }
             _ => {
                 packet.protocol = PacketProtocol::Other(ethernet.get_ethertype().0);

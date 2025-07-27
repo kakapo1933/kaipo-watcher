@@ -5,6 +5,10 @@ use async_trait::async_trait;
 // Provides optimized packet capture for different operating systems
 // Handles platform-specific privilege requirements and performance optimizations
 
+/// Cross-platform network interface management
+/// Provides intelligent interface filtering, type detection, and relevance scoring
+pub mod interface_manager;
+
 /// Linux packet capture implementation
 /// Uses AF_PACKET sockets with CAP_NET_RAW capability requirements
 #[cfg(target_os = "linux")]
@@ -24,8 +28,8 @@ pub mod windows;
 pub trait PlatformPacketCapture: Send + Sync {
     async fn start_capture(&mut self, interface_name: &str) -> Result<()>;
     async fn stop_capture(&mut self) -> Result<()>;
-    fn check_privileges() -> Result<bool>;
-    fn get_required_capabilities() -> Vec<String>;
+    fn check_privileges() -> Result<bool> where Self: Sized;
+    fn get_required_capabilities() -> Vec<String> where Self: Sized;
 }
 
 pub fn create_platform_capturer() -> Result<Box<dyn PlatformPacketCapture>> {
@@ -51,12 +55,43 @@ pub fn create_platform_capturer() -> Result<Box<dyn PlatformPacketCapture>> {
 }
 
 pub fn check_packet_capture_support() -> Result<()> {
-    if !PlatformPacketCapture::check_privileges()? {
-        let capabilities = PlatformPacketCapture::get_required_capabilities();
-        return Err(anyhow::anyhow!(
-            "Insufficient privileges for packet capture. Required: {}",
-            capabilities.join(", ")
-        ));
+    #[cfg(target_os = "linux")]
+    {
+        if !linux::LinuxPacketCapture::check_privileges()? {
+            let capabilities = linux::LinuxPacketCapture::get_required_capabilities();
+            return Err(anyhow::anyhow!(
+                "Insufficient privileges for packet capture. Required: {}",
+                capabilities.join(", ")
+            ));
+        }
     }
+    
+    #[cfg(target_os = "macos")]
+    {
+        if !macos::MacOSPacketCapture::check_privileges()? {
+            let capabilities = macos::MacOSPacketCapture::get_required_capabilities();
+            return Err(anyhow::anyhow!(
+                "Insufficient privileges for packet capture. Required: {}",
+                capabilities.join(", ")
+            ));
+        }
+    }
+    
+    #[cfg(target_os = "windows")]
+    {
+        if !windows::WindowsPacketCapture::check_privileges()? {
+            let capabilities = windows::WindowsPacketCapture::get_required_capabilities();
+            return Err(anyhow::anyhow!(
+                "Insufficient privileges for packet capture. Required: {}",
+                capabilities.join(", ")
+            ));
+        }
+    }
+    
+    #[cfg(not(any(target_os = "linux", target_os = "macos", target_os = "windows")))]
+    {
+        return Err(anyhow::anyhow!("Unsupported platform for packet capture"));
+    }
+    
     Ok(())
 }

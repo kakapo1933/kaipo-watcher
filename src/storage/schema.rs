@@ -159,6 +159,7 @@ fn create_indexes(conn: &Connection) -> Result<()> {
     Ok(())
 }
 
+#[allow(dead_code)]
 pub fn setup_data_retention(tx: &Transaction) -> Result<()> {
     // Set up automatic cleanup of old data
     // Keep detailed packet stats for 7 days

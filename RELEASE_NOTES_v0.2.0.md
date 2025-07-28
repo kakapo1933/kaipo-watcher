@@ -141,7 +141,7 @@ kw live --important-only
 
 ### Building from Source
 ```bash
-git clone https://github.com/yourusername/kaipo-watcher.git
+git clone https://github.com/kakapo1933/kaipo-watcher.git
 cd kaipo-watcher
 git checkout v0.2.0
 cargo build --release

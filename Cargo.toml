@@ -1,6 +1,6 @@
 [package]
 name = "kaipo-watcher"
-version = "0.1.0"
+version = "0.2.0"
 edition = "2024"
 authors = ["Kaipo Chen"]
 description = "A command-line tool for monitoring internet usage, bandwidth, and network packets"

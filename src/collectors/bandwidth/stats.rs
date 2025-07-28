@@ -8,7 +8,7 @@ use serde::{Deserialize, Serialize};
 
 /// Indicates the reliability of speed calculations
 /// Used to inform users about the quality of bandwidth measurements
-#[derive(Debug, Clone, Serialize, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq, Hash)]
 pub enum CalculationConfidence {
     /// High confidence: Normal operation with sufficient data and stable conditions
     High,
